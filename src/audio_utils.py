@@ -18,7 +18,8 @@ def fetch_youtube_audio(track_name, artist_name, cache_dir="data/playback_cache"
     
     # 1. Generate consistent filename
     safe_name = get_safe_name(track_name, artist_name)
-    file_path = os.path.join(cache_dir, f"{safe_name}.mp3")
+    # CHANGED: Use .m4a extension instead of .mp3 for native CoreAudio compatibility on macOS without requiring ffmpeg.
+    file_path = os.path.join(cache_dir, f"{safe_name}.m4a")
     
     # 2. Check Cache: Avoid redundant downloads
     if os.path.exists(file_path):
@@ -31,7 +32,8 @@ def fetch_youtube_audio(track_name, artist_name, cache_dir="data/playback_cache"
     ]
     
     ydl_opts = {
-        'format': 'bestaudio/best',
+        # CHANGED: Prioritize downloading the .m4a codec explicitly, otherwise yt-dlp might download webm and misname it.
+        'format': 'bestaudio[ext=m4a]/bestaudio/best',
         'outtmpl': file_path,
         'noplaylist': True,
         'quiet': True,
@@ -83,7 +85,8 @@ def fetch_audio_for_analysis(search_query, cache_dir="data/playback_cache"):
     if len(safe_name) > 50:
         safe_name = safe_name[:50]
     
-    file_path = os.path.join(cache_dir, f"analysis_{safe_name}.mp3")
+    # CHANGED: We use .m4a as it is more natively supported on Mac (CoreAudio) without ffmpeg
+    file_path = os.path.join(cache_dir, f"analysis_{safe_name}.m4a")
     
     if os.path.exists(file_path):
         return file_path
@@ -95,7 +98,8 @@ def fetch_audio_for_analysis(search_query, cache_dir="data/playback_cache"):
         query = f"ytsearch1:{search_query} official audio"
         
     ydl_opts = {
-        'format': 'bestaudio/best',
+        # CHANGED: Prefer m4a for better compatibility with librosa's audioread backend on macOS
+        'format': 'bestaudio[ext=m4a]/bestaudio/best',
         'outtmpl': file_path,
         'noplaylist': True,
         'quiet': True,
