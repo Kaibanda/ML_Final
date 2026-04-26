@@ -447,7 +447,11 @@ with tab_discovery:
                     'scores': [float(scores[i]) for i in top_indices],
                 }
             except Exception as e:
-                st.error(f"Analysis failed: {e}")
+                # CHANGED: Added stack trace to the error message to help debug why analysis fails
+                # (e.g., if the user is missing ffmpeg or librosa fails to load a .webm disguised as .mp3)
+                import traceback
+                error_details = f"{e}\n\n{traceback.format_exc()}" if "Analysis failed" in str(e) else str(e)
+                st.error(f"Analysis failed: {error_details}")
                 st.session_state.pop('analyze_results', None)
 
     # Render from state so results persist across reruns (e.g. after clicking Play)
