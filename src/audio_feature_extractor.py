@@ -9,7 +9,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 
 def extract_audio_features(audio_path: str) -> np.ndarray:
     """
-    Extracts a 58-dimensional feature vector from audio using Librosa.
+    Extracts a 56-dimensional feature vector from audio using Librosa.
     
     Dimensions:
     - MFCC (26D): mean + std. Captures timbre (the 'texture' of the sound).
@@ -17,7 +17,7 @@ def extract_audio_features(audio_path: str) -> np.ndarray:
     - Spectral Centroid/BW/Rolloff (6D): Captures 'brightness' and 'richness'.
     - Zero Crossing Rate/RMS (4D): Captures percussiveness and loudness.
     - Tempo (1D): Beats per minute (BPM).
-    - Spectral Contrast (9D): foreground vs background energy separation.
+    - Spectral Contrast (7D): foreground vs background energy separation.
     """
     # Load audio (mono, 22.05kHz) - limited to first 60s for consistency
     y, sr = librosa.load(audio_path, sr=22050, mono=True, duration=60)
