@@ -75,7 +75,8 @@ def fetch_audio_for_analysis(search_query, cache_dir="data/playback_cache"):
     if len(safe_name) > 50:
         safe_name = safe_name[:50]
     
-    file_path = os.path.join(cache_dir, f"analysis_{safe_name}.mp3")
+    # We use .m4a as it is more natively supported on Mac (CoreAudio) without ffmpeg
+    file_path = os.path.join(cache_dir, f"analysis_{safe_name}.m4a")
     
     if os.path.exists(file_path):
         return file_path
@@ -87,7 +88,8 @@ def fetch_audio_for_analysis(search_query, cache_dir="data/playback_cache"):
         query = f"ytsearch1:{search_query} official audio"
         
     ydl_opts = {
-        'format': 'bestaudio/best',
+        # Prefer m4a for better compatibility with librosa's audioread backend on macOS
+        'format': 'bestaudio[ext=m4a]/bestaudio/best',
         'outtmpl': file_path,
         'noplaylist': True,
         'quiet': True,
