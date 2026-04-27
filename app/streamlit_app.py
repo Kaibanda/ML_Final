@@ -684,7 +684,7 @@ with tab_playlist:
 
     with col_songs:
         top10 = cluster_df.head(10)
-        st.markdown(f"**Songs in Playlist #{selected_cluster+1} (showing top 10):**")
+        st.markdown(f"**Songs in Playlist #{selected_cluster+1} (showing 10 Examples):**")
         cluster_queue = [
             {"name": r['track_name'], "artist": r['track_artist']}
             for _, r in top10.iterrows()
