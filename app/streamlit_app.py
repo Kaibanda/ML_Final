@@ -21,7 +21,7 @@ st.set_page_config(
     page_title="Music Engine",
     page_icon="🎵",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 st.markdown("""
@@ -29,8 +29,14 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
     * { font-family: 'Outfit', sans-serif; }
     
+    /* Make header background black and toggle button white */
+    [data-testid="stHeader"] { background-color: transparent !important; }
+    [data-testid="collapsedControl"] { color: #FFFFFF !important; background-color: transparent !important; }
+    [data-testid="collapsedControl"] svg { color: #FFFFFF !important; fill: #FFFFFF !important; }
+    
     .stApp { background-color: #030303; color: #FFFFFF; }
-    header, footer { visibility: hidden; }
+    [data-testid="stSidebar"] { background-color: #111111 !important; border-right: 1px solid #333; }
+    footer { visibility: hidden; }
 
     /* Base Typography */
     h1, h2, h3, .stMetric label {
