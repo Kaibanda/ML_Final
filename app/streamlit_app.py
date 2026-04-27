@@ -460,7 +460,7 @@ with tab_discovery:
     res = st.session_state.get('analyze_results')
     if res:
         st.markdown(f"**Analyzed:** `{res['query']}`")
-        st.audio(res['tmp_path'])
+        st.audio(res['tmp_path'], format="audio/m4a")
         st.markdown(f"### Top {TOP_K} Similar Songs in DB")
         rec_queue = [
             {"name": df.iloc[i]['track_name'], "artist": df.iloc[i]['track_artist']}
@@ -684,7 +684,7 @@ with tab_playlist:
 
     with col_songs:
         top10 = cluster_df.head(10)
-        st.markdown(f"**Songs in Playlist #{selected_cluster+1} (showing 10 Examples):**")
+        st.markdown(f"**Songs in Playlist #{selected_cluster+1} (showing top 10):**")
         cluster_queue = [
             {"name": r['track_name'], "artist": r['track_artist']}
             for _, r in top10.iterrows()
