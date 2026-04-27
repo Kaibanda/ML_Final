@@ -21,7 +21,7 @@ st.set_page_config(
     page_title="Music Engine",
     page_icon="🎵",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 st.markdown("""
@@ -30,7 +30,8 @@ st.markdown("""
     * { font-family: 'Outfit', sans-serif; }
     
     .stApp { background-color: #030303; color: #FFFFFF; }
-    header, footer { visibility: hidden; }
+    footer { visibility: hidden; }
+    header { background-color: transparent !important; }
 
     /* Base Typography */
     h1, h2, h3, .stMetric label {
