@@ -3,7 +3,7 @@ Manual PCA implementation using covariance matrix + SVD.
 Used for 2D visualization of audio embeddings in the Streamlit Evaluation tab.
 No sklearn dependency.
 """
-import numpy as np
+import numpy as np # Import numpy for matrix and array operations
 
 
 def standardize(X: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -13,10 +13,10 @@ def standardize(X: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     (e.g. tempo in BPM) would dominate the principal components purely
     because of their scale, not because they carry more information.
     """
-    mean = X.mean(axis=0)
-    std = X.std(axis=0)
-    std = np.where(std == 0, 1.0, std)  # avoid division by zero for constant features
-    return (X - mean) / std, mean, std
+    mean = X.mean(axis=0) # Compute the average value for each feature column
+    std = X.std(axis=0) # Compute the standard deviation for each feature column
+    std = np.where(std == 0, 1.0, std)  # Replace zero std with 1.0 to prevent division by zero errors
+    return (X - mean) / std, mean, std # Return z-score normalized array, along with computed mean and std
 
 
 def manual_pca(X: np.ndarray, n_components: int = 2):
@@ -38,22 +38,19 @@ def manual_pca(X: np.ndarray, n_components: int = 2):
         reusable for projecting new points: Y = (new - mean) @ components
       - mean: (d,) — data mean used for centering (for projecting new points)
     """
-    n = X.shape[0] # Step 0: Get the number of sample points
+    n = X.shape[0] # Retrieve the total number of data samples (rows)
 
-    mean_vec = X.mean(axis=0) # Step 1: Calculate the average value of each feature
-    X_centered = X - mean_vec # Step 2: Center data by subtracting the mean from every point
+    mean_vec = X.mean(axis=0) # Calculate the average value of each feature across all samples
+    X_centered = X - mean_vec # Center the data around origin by subtracting the mean
 
-    # Step 3: Compute the Covariance Matrix: (X^T @ X) / (n - 1)
-    # This matrix captures how each pair of features varies together.
-    cov = X_centered.T @ X_centered / (n - 1)
+    # Compute the Covariance Matrix: (X^T @ X) / (n - 1)
+    cov = X_centered.T @ X_centered / (n - 1) # Calculate covariance matrix capturing feature correlations
 
-    # Step 4: Perform Singular Value Decomposition (SVD) on the Covariance matrix
-    # U: Orthogonal matrix where columns are Principal Components (Eigenvectors)
-    # S: Diagonal matrix of singular values (Variance explained / Eigenvalues)
-    U, S, _ = np.linalg.svd(cov)
+    # Perform Singular Value Decomposition (SVD) on the Covariance matrix
+    U, S, _ = np.linalg.svd(cov) # Decompose covariance to get eigenvectors (U) and eigenvalues (S)
 
-    components = U[:, :n_components] # Step 5: Select the top K Principal Components
-    X_pca = X_centered @ components # Step 6: Project the original D-dimensional data onto K-dimensions
-    explained_variance_ratio = S[:n_components] / S.sum() # Calculate the % of total variance captured
+    components = U[:, :n_components] # Extract the top 'n_components' eigenvectors as the principal components
+    X_pca = X_centered @ components # Project the high-dimensional centered data down to the selected PCA dimensions
+    explained_variance_ratio = S[:n_components] / S.sum() # Calculate the percentage of total data variance retained
 
-    return X_pca, explained_variance_ratio, components, mean_vec # Return results for visualization
+    return X_pca, explained_variance_ratio, components, mean_vec # Return the transformed data and mathematical metadata

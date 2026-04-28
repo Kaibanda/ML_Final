@@ -227,7 +227,7 @@ with st.sidebar:
         mode_color = '#FF7043'
 
     st.markdown(f'<p style="color:{mode_color}; font-weight:700; font-size:0.9rem;">{mode_label}</p>', unsafe_allow_html=True)
-    st.caption(f'score = MSEₘₑₜₐ + **{lambda_val:.2f}** × (1 − cosₛᴵₙ)')
+    st.caption(f'Loss = MSE_meta + **{lambda_val:.2f}** × (1 − COS_SIM_audio)')
     if lambda_val == LAMBDA_WEIGHT:
         st.caption('✅ Currently at tuned optimal (λ=0.1)')
 
@@ -263,7 +263,8 @@ def render_player():
         with st.spinner(" "): 
             path = fetch_youtube_audio(curr['name'], curr['artist'])
             if path:
-                st.audio(path, format="audio/m4a", autoplay=True)
+                # Format is inferred from the downloaded file's extension
+                st.audio(path, autoplay=True)
             else:
                 st.error("Streaming failed.")
     st.markdown('</div>', unsafe_allow_html=True)
@@ -423,8 +424,8 @@ with tab_discovery:
     if search_query and st.button("Analyze & Match", type="primary"):
         with st.spinner("Downloading Songs..."):
             try:
-                from src.audio_utils import fetch_audio_for_analysis
-                tmp_path = fetch_audio_for_analysis(search_query)
+                from src.audio_utils import fetch_youtube_audio
+                tmp_path = fetch_youtube_audio(search_query)
                 if not tmp_path:
                     st.error("Could not download audio.")
                     st.stop()
