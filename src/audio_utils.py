@@ -1,112 +1,67 @@
-import yt_dlp
-import os
-import glob
-import time
+import yt_dlp # Import yt-dlp for downloading YouTube audio
+import os # Import os for operating system and path manipulation
+import glob # Import glob for Unix style pathname pattern expansion
+import time # Import time for file timestamp operations
 
-def get_safe_name(track_name, artist_name):
+def get_safe_name(track_name, artist_name): # Define a function to sanitize strings for filesystem use
     """
     Standardizes 'Song - Artist' into a filesystem-safe string.
     Ensures that downloaded files and dataset join-keys are identical.
     """
-    return "".join([c for c in f"{track_name} - {artist_name}" if c.isalpha() or c.isdigit() or c==' ']).rstrip()
+    return "".join([c for c in f"{track_name} - {artist_name}" if c.isalpha() or c.isdigit() or c==' ']).rstrip() # Strip out all special characters except alphanumerics and spaces, then trim trailing whitespace
 
-def fetch_youtube_audio(track_name, artist_name, cache_dir="data/playback_cache"):
+def fetch_youtube_audio(query_or_track, artist_name=None, cache_dir="data/playback_cache"): # Define function to download audio given a search query
     """
-    On-demand fetcher that finds a song on YouTube and downloads the .m4a 
-    for real-time playback in the Streamlit app.
+    On-demand fetcher that finds a song on YouTube.
+    Supports both "Track - Artist" metadata and direct search queries.
+    Downloads as .m4a to ensure Safari/iOS compatibility and librosa support.
     """
-    os.makedirs(cache_dir, exist_ok=True)
+    os.makedirs(cache_dir, exist_ok=True) # Create the cache directory if it doesn't already exist
     
-    # 1. Generate consistent filename
-    safe_name = get_safe_name(track_name, artist_name)
-    file_path = os.path.join(cache_dir, f"{safe_name}.m4a")
+    if artist_name: # Check if a specific artist name was provided (Spotify track mode)
+        safe_name = get_safe_name(query_or_track, artist_name) # Generate a safe filename using track and artist
+        query = f"ytsearch1:{query_or_track} {artist_name} audio" # Construct a YouTube search query looking for the audio version
+    else: # If no artist name is provided (raw search mode)
+        safe_name = "".join([c for c in query_or_track if c.isalnum() or c==' ']).rstrip() # Sanitize the raw query string for the filename
+        if len(safe_name) > 50: # Check if the sanitized query is too long for a filesystem name
+            safe_name = safe_name[:50] # Truncate the filename to 50 characters to prevent OS errors
+        query = f"ytsearch1:{query_or_track} official audio" # Construct a YouTube search query emphasizing official audio
+            
+    file_path = os.path.join(cache_dir, f"{safe_name}.m4a") # Construct the full absolute path for the target .m4a file
     
-    # 2. Check Cache: Avoid redundant downloads
-    if os.path.exists(file_path):
-        return file_path
+    if os.path.exists(file_path): # Check if the file has already been downloaded and cached
+        return file_path # Return the cached file path immediately to save time and bandwidth
         
-    query = f"ytsearch1:{track_name} {artist_name} audio"
-    
-    ydl_opts = {
-        'format': 'bestaudio[ext=m4a]',
-        'outtmpl': file_path,
-        'noplaylist': True,
-        'quiet': True,
-        'no_warnings': True,
-        'extract_flat': False
+    ydl_opts = { # Configure the yt-dlp options dictionary
+        'format': 'bestaudio[ext=m4a]', # Force download of the best quality audio stream that natively has an .m4a extension
+        'outtmpl': file_path, # Set the output template to save exactly to our constructed file_path
+        'noplaylist': True, # Ensure only a single track is downloaded, not an entire playlist
+        'quiet': True, # Suppress standard output logs from yt-dlp
+        'no_warnings': True, # Suppress warning messages from yt-dlp
+        'extract_flat': False, # Ensure full extraction occurs so the actual file is downloaded
+        'extractor_args': {'youtube': ['player_client=android']} # Masquerade as an Android client to bypass some YouTube bot protections
     }
     
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # We use extract_info directly with download=True as per Kai's PR
-            ydl.extract_info(query, download=True)
-            if os.path.exists(file_path):
-                # Clean up if cache is getting too large (keep last 20)
-                manage_cache_size(cache_dir)
-                return file_path
-    except Exception as e:
-        print(f"Error fetching audio for {track_name}: {e}")
-        return None
+    try: # Start a try-except block to handle potential download failures gracefully
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl: # Initialize the yt-dlp object with our options
+            ydl.extract_info(query, download=True) # Execute the search query and trigger the download
+            if os.path.exists(file_path): # Verify that the expected file was successfully created on disk
+                manage_cache_size(cache_dir) # Trigger the cache cleanup function to prevent infinite disk usage
+                return file_path # Return the path to the newly downloaded file
+    except Exception as e: # Catch any errors that occurred during the yt-dlp process
+        print(f"Error fetching audio: {e}") # Print the error message for debugging purposes
+        return None # Return None to indicate the download failed
     
-    return None
+    return None # Fallback return None if the file wasn't created despite no exceptions
 
-def manage_cache_size(cache_dir, max_files=20):
+def manage_cache_size(cache_dir, max_files=20): # Define function to limit the number of cached files
     """Keep the playback cache lean by deleting oldest files."""
-    files = glob.glob(os.path.join(cache_dir, "*.m4a"))
-    if len(files) > max_files:
-        # Sort by modification time (oldest first)
-        files.sort(key=os.path.getmtime)
-        for i in range(len(files) - max_files):
-            try:
-                os.remove(files[i])
-            except:
-                pass
-
-def fetch_audio_for_analysis(search_query, cache_dir="data/playback_cache"):
-    """
-    Downloads audio specifically for 'Analyze Any Song'.
-    Supports direct YouTube URLs or plain text searches.
-    Forces YouTube to guarantee we get the official song, not a SoundCloud cover.
-    """
-    os.makedirs(cache_dir, exist_ok=True)
-    
-    # Generate a safe name for caching based on the query
-    safe_name = "".join([c for c in search_query if c.isalnum() or c==' ']).rstrip()
-    if len(safe_name) > 50:
-        safe_name = safe_name[:50]
-    
-    # We use .m4a as it is more natively supported on Mac (CoreAudio) without ffmpeg
-    file_path = os.path.join(cache_dir, f"analysis_{safe_name}.m4a")
-    
-    if os.path.exists(file_path):
-        return file_path
-
-    # If it's a URL, download it directly. Otherwise, do a YouTube search.
-    if search_query.startswith("http://") or search_query.startswith("https://"):
-        query = search_query
-    else:
-        query = f"ytsearch1:{search_query} official audio"
-        
-    ydl_opts = {
-        # Prefer m4a for better compatibility with librosa's audioread backend on macOS
-        'format': 'bestaudio[ext=m4a]/bestaudio/best',
-        'outtmpl': file_path,
-        'noplaylist': True,
-        'quiet': True,
-        'no_warnings': True,
-        'extract_flat': False,
-        'extractor_args': {'youtube': ['player_client=android']}
-    }
-    
-    try:
-        import yt_dlp
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.extract_info(query, download=True)
-            if os.path.exists(file_path):
-                manage_cache_size(cache_dir)
-                return file_path
-    except Exception as e:
-        print(f"Error fetching analysis audio for {search_query}: {e}")
-        return None
-        
-    return None
+    # Delete both .m4a and legacy .mp3 files if they exist
+    files = glob.glob(os.path.join(cache_dir, "*.m4a")) + glob.glob(os.path.join(cache_dir, "*.mp3")) # Aggregate a list of all audio files currently in the cache directory
+    if len(files) > max_files: # Check if the number of cached files exceeds the allowed maximum
+        files.sort(key=os.path.getmtime) # Sort the files chronologically by modification time (oldest first)
+        for i in range(len(files) - max_files): # Loop over the oldest files that exceed the limit
+            try: # Use a try block in case the file is locked or already deleted
+                os.remove(files[i]) # Delete the old file from the filesystem
+            except: # Catch any deletion errors
+                pass # Silently ignore deletion errors to keep the application running
