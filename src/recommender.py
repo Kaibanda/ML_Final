@@ -32,11 +32,10 @@ def build_embedding_std(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, np.nd
     Returns (emb_std, feat_mean, feat_std) where emb_std is the embedding matrix
     z-score standardized per feature dimension using the training distribution.
 
-    Use this — not the L2-normalized emb_matrix — when matching a new song that
-    has no Spotify metadata. Unlike cosine similarity (which is magnitude-invariant),
-    Euclidean distance on z-scored features respects absolute feature magnitudes:
-    [0.1, 0.1, ...] and [0.9, 0.9, ...] correctly produce a non-zero distance
-    instead of being treated as identical unit vectors.
+    This provides the raw standardized features used for inference.
+    Note: The Streamlit application currently takes these standardized features
+    and applies L2-normalization on top to compute Cosine Similarity, which 
+    focuses on the semantic direction of the audio signature rather than magnitude.
     """
     raw = np.stack(df['embedding'].values).astype(np.float32)
     mean = raw.mean(axis=0)
@@ -125,8 +124,9 @@ def recommend(
 
     # --- Step 2: Audio Embedding Distance (1 - Cosine) ---
     # We focus on the "Acoustic Signature" direction.
-    # Note: emb_matrix was Z-scored and L2-normalized during build_matrices, 
-    # so (1 - dot_product) is equivalent to 0.5 * squared_euclidean(normalized_vectors).
+    # Note: emb_matrix was Z-scored and L2-normalized during build_matrices.
+    # We use the cosine_similarity helper here, which explicitly re-normalizes the vectors
+    # to ensure numerical stability before computing the angle.
     cos_sim = cosine_similarity(emb_matrix, q_emb)
     emb_dists = 1.0 - cos_sim
 

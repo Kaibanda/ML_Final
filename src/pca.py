@@ -34,6 +34,7 @@ def manual_pca(X: np.ndarray, n_components: int = 2):
 
     Returns (X_pca, explained_variance_ratio, components, mean).
       - X_pca: (n, n_components) — points projected into PC space
+      - explained_variance_ratio: (n_components,) — fraction of total variance explained by each selected component
       - components: (d, n_components) — PC basis vectors (columns are PCs),
         reusable for projecting new points: Y = (new - mean) @ components
       - mean: (d,) — data mean used for centering (for projecting new points)
