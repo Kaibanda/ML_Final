@@ -52,7 +52,7 @@ Since music similarity is subjective, we used a multi-layered validation strateg
 *   **Takeaway:** The 56D MFCC/Chroma features successfully capture the core vocal signature and timbre.
 
 ### D. K-Means Cluster Agreement
-*   **Method:** We ran Spherical K-Means (8 clusters), selected 100 random seeds, and checked if their Top 10 continuous nearest-neighbors fell into the exact same discrete K-Means cluster.
+*   **Method:** We ran K-Means++ (8 clusters), selected 100 random seeds, and checked if their Top 10 continuous nearest-neighbors fell into the exact same discrete K-Means cluster.
 *   **Results:** Random Baseline: 12.5% | **Agreement Rate: ~75.0%**
 *   **Defense & Justification:** K-Means carves the space into rigid Voronoi boundaries. If a seed song lies near an edge, its nearest physical neighbors often reside just across the boundary. The 25% deviation is purely due to this geometric boundary effect. **More importantly, because this discrete clustering aligns >75% with our highly-validated continuous Hybrid Engine, it proves our K-Means implementation is not just mathematically sound, but functions perfectly in practice as an "Auto Playlist Generator"—successfully grouping mathematically similar tracks into cohesive, ready-to-listen mood/vibe categories.**
 
